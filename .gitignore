@@ -1,0 +1,5 @@
+autoconf.err
+autotest
+objs/
+tags
+cscope.out
