@@ -34,6 +34,12 @@ typedef struct {
     ngx_http_udp_format_t *format;
 } ngx_http_udp_main_conf_t;
 
+typedef struct {
+    ngx_str_t                   name;
+    size_t                      len;
+    ngx_http_udp_op_run_pt      run;
+} ngx_http_udp_var_t;
+
 ngx_int_t ngx_udp_connect(ngx_udp_connection_t *udpconn);
 
 static ngx_int_t ngx_http_udp_init(ngx_conf_t *cf);
@@ -46,6 +52,13 @@ static ngx_int_t ngx_http_udp_variable_compile(ngx_conf_t *cf, ngx_http_udp_op_t
 static size_t ngx_http_udp_variable_getlen(ngx_http_request_t *r, uintptr_t data);
 static u_char *ngx_http_udp_variable(ngx_http_request_t *r, u_char *buf, ngx_http_udp_op_t *op);
 static uintptr_t ngx_http_udp_escape(u_char *dst, u_char *src, size_t size);
+
+static u_char *ngx_http_udp_sec(ngx_http_request_t *r, u_char *buf, ngx_http_udp_op_t *op);
+
+static ngx_http_udp_var_t  ngx_http_udp_vars[] = {
+    { ngx_string("sec"), NGX_TIME_T_LEN, ngx_http_udp_sec },
+    { ngx_null_string, 0, NULL }
+};
 
 static ngx_command_t ngx_http_udp_commands[] = {
     {
@@ -360,6 +373,7 @@ ngx_http_udp_compile_format(ngx_conf_t *cf, ngx_array_t *flushes, ngx_array_t *o
     size_t i, len;
     ngx_str_t var;
     ngx_uint_t bracket;
+    ngx_http_udp_var_t *v;
 
     ngx_str_t *value = args->elts;
 
@@ -424,6 +438,17 @@ ngx_http_udp_compile_format(ngx_conf_t *cf, ngx_array_t *flushes, ngx_array_t *o
                     goto invalid;
                 }
 
+                for (v = ngx_http_udp_vars; v->name.len; v++) {
+                    if (v->name.len == var.len && ngx_strncmp(v->name.data, var.data, var.len) == 0) {
+                        op->len = v->len;
+                        op->getlen = NULL;
+                        op->run = v->run;
+                        op->data = 0;
+
+                        goto found;
+                    }
+                }
+
                 if (ngx_http_udp_variable_compile(cf, op, &var) != NGX_OK) {
                     return NGX_CONF_ERROR;
                 }
@@ -438,6 +463,7 @@ ngx_http_udp_compile_format(ngx_conf_t *cf, ngx_array_t *flushes, ngx_array_t *o
                     *flush = op->data;
                 }
 
+            found:
                 continue;
             }
 
@@ -604,3 +630,14 @@ ngx_http_udp_escape(u_char *dst, u_char *src, size_t size)
 
     return (uintptr_t) dst;
 }
+
+static u_char *
+ngx_http_udp_sec(ngx_http_request_t *r, u_char *buf, ngx_http_udp_op_t *op)
+{
+    ngx_time_t  *tp;
+
+    tp = ngx_timeofday();
+
+    return ngx_sprintf(buf, "%T", tp->sec);
+}
+
