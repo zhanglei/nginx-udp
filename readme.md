@@ -19,6 +19,5 @@ dso {
 }
 
 udp_server localhost:8086;
-udp_format "nginx.stat,appid=foo,host=$host,upstream=$upstream_addr,status_code=$status request_time=$request_time,body_sent=$body_bytes_sent";
-
+udp_format 'nginx.requests,hostname=$hostname,host=$host,upstream=$upstream_addr,status_code=$status response_time=$request_time,response_size=$body_bytes_sent ${udp_usec}000';
 ```
