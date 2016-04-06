@@ -638,7 +638,7 @@ ngx_http_udp_escape(u_char *dst, u_char *src, size_t size)
 static u_char *
 ngx_http_udp_sec(ngx_http_request_t *r, u_char *buf, ngx_http_udp_op_t *op)
 {
-    ngx_time_t  *tp;
+    ngx_time_t *tp;
 
     tp = ngx_timeofday();
 
@@ -648,7 +648,7 @@ ngx_http_udp_sec(ngx_http_request_t *r, u_char *buf, ngx_http_udp_op_t *op)
 static u_char *
 ngx_http_udp_msec(ngx_http_request_t *r, u_char *buf, ngx_http_udp_op_t *op)
 {
-    ngx_time_t  *tp;
+    ngx_time_t *tp;
 
     tp = ngx_timeofday();
 
@@ -658,9 +658,9 @@ ngx_http_udp_msec(ngx_http_request_t *r, u_char *buf, ngx_http_udp_op_t *op)
 static u_char *
 ngx_http_udp_usec(ngx_http_request_t *r, u_char *buf, ngx_http_udp_op_t *op)
 {
-    ngx_time_t  *tp;
+    struct timeval tv;
 
-    tp = ngx_timeofday();
+    ngx_gettimeofday(&tv);
 
-    return ngx_sprintf(buf, "%T%03T%03T", tp->sec, tp->msec, tp->usec);
+    return ngx_sprintf(buf, "%T%06T", tv.tv_sec, tv.tv_usec);
 }
